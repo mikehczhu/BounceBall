@@ -1,37 +1,29 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
-public class Fluid : MonoBehaviour {
 
+public class Fluid : MonoBehaviour
+{
     private GameObject particle;
-    private float width;
-    private float height;
-    private Vector3[][] buffer;
-    private float renderBuffer;
-    private Vector3 normal;
-    private Vector3 tangent;
-    private float k1;
-    private float k2;
-    private float k3;
+    private int particleCount;
+    public DynamicParticle.STATES particlesState = DynamicParticle.STATES.GAS; 
 
-	// Use this for initialization
-	void Start () {
-        particle = Resources.Load<GameObject>("Prefabs/Fluid");
-        width = 20;
-        height = 20;
-        float count = width * height;
-        buffer[0] = new Vector3[(int)count];
-        buffer[1] = new Vector3[(int)count];
-
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-    public void Evaluate()
+    void Start()
     {
+        particle = Resources.Load<GameObject>("Prefabs/Fluid/particle");
+        particleCount = 200;
+        Vector3 startPos = transform.position;
+        for(int i=0;i<particleCount;++i)
+        {
+            GameObject go = Instantiate(particle, startPos, Quaternion.identity);
+            go.transform.parent = transform;
+            DynamicParticle script = go.GetComponent<DynamicParticle>();
+            script.SetState(particlesState);
+            startPos.x -= 0.005f;
+        }
+    }
 
+    void Update()
+    {
     }
 }

@@ -40,7 +40,7 @@ public class Rope : MonoBehaviour {
     }
     private void Simulate()
     {
-        Vector2 forceGravity = new Vector2(0, Physics.Instance.G * quality);
+        Vector2 forceGravity = new Vector2(0, MyPhysics.Instance.G * quality);
         for (int i = 0; i < segmentCount; ++i)
         {
             RopeNode firstSegment = this.RopeNodes[i];

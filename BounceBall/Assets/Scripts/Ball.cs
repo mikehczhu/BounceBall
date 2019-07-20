@@ -58,7 +58,7 @@ public class Ball : MonoBehaviour {
     // param force 特定方向的推力
     private Vector3 CalTotalForce(Vector3 force)
     {
-        Vector3 totalForce = force + new Vector3(0, quality * Physics.Instance.G, 0);
+        Vector3 totalForce = force + new Vector3(0, quality * MyPhysics.Instance.G, 0);
         return totalForce;
     }
     // 计算小球的加速度
