@@ -18,6 +18,7 @@ public class WaterDetector : MonoBehaviour {
     {
         if (collision.GetComponent<Rigidbody2D>() != null)
         {
+            print("碰撞到了");
             transform.parent.GetComponent<Fluid>().Splash(transform.position.x, collision.GetComponent<Rigidbody2D>().velocity.y * collision.GetComponent<Rigidbody2D>().mass / 40.0f);
         }
     }

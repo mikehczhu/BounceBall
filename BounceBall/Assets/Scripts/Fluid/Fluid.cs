@@ -23,7 +23,6 @@ public class Fluid : MonoBehaviour
     private float left;
     private float bottom;
 
-    public GameObject splash;
     public Material mat;
     public GameObject watermesh;
 
@@ -32,7 +31,7 @@ public class Fluid : MonoBehaviour
 
     void Start()
     {
-        SpawnWater(-50, 47, -42, -50);
+        SpawnWater(-48.3f, 46.3f+48.5f, -40, -50);
     }
 
     public void Splash(float xpos, float velocity)
@@ -52,20 +51,12 @@ public class Fluid : MonoBehaviour
             //Set the lifetime of the particle system.
             float lifetime = 0.93f + Mathf.Abs(velocity) * 0.07f;
 
-            //Set the splash to be between two values in Shuriken by setting it twice.
-            splash.GetComponent<ParticleSystem>().startSpeed = 8 + 2 * Mathf.Pow(Mathf.Abs(velocity), 0.5f);
-            splash.GetComponent<ParticleSystem>().startSpeed = 9 + 2 * Mathf.Pow(Mathf.Abs(velocity), 0.5f);
-            splash.GetComponent<ParticleSystem>().startLifetime = lifetime;
 
             //Set the correct position of the particle system.
             Vector3 position = new Vector3(xpositions[index], ypositions[index] - 0.35f, 5);
 
             //This line aims the splash towards the middle. Only use for small bodies of water:
             Quaternion rotation = Quaternion.LookRotation(new Vector3(xpositions[Mathf.FloorToInt(xpositions.Length / 2)], baseheight + 8, 5) - position);
-
-            //Create the splash and tell it to destroy itself.
-            GameObject splish = Instantiate(splash, position, rotation) as GameObject;
-            Destroy(splish, lifetime + 0.3f);
         }
     }
 
@@ -79,7 +70,7 @@ public class Fluid : MonoBehaviour
 
 
         //Calculating the number of edges and nodes we have
-        int edgecount = Mathf.RoundToInt(Width) * 5;
+        int edgecount = Mathf.RoundToInt(Width)/2;
         int nodecount = edgecount + 1;
 
         //Add our line renderer and set it up:

@@ -12,8 +12,6 @@ public class Ball : MonoBehaviour {
     public Vector3 force;           // 小球受到的推力
     public Vector3 totalForce;      // 小球受到的合力
     public float quality;           // 小球的质量,kg
-    public float deltaTime;         // 当前帧与上一帧的时间间隔
-    public float lastFrame;         // 上一帧对应的时间
     public Vector3 moveVector;      // 小球移动的方向
     public float bounce;            // 小球的反弹系数
     private bool isDestory;         // 标志位，用来标识小球是否被销毁
@@ -22,9 +20,8 @@ public class Ball : MonoBehaviour {
     // Use this for initialization
     void Start () {
         position = transform.position;
-        speed = new Vector3(0, 0, 0);
+        speed = transform.right * 100;
         quality = 10.0f;
-        lastFrame = Time.time;
         force = Vector3.zero;
         bounce = 1.0f;
         isDestory = false;
@@ -34,26 +31,13 @@ public class Ball : MonoBehaviour {
 	void Update () {
         if (isDestory)
             return;
-        float currentFrame = Time.time;
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        ProcessInput();
         totalForce = CalTotalForce(force);
-        force = Vector3.zero;
         acceleration = CalAcceleration(totalForce);
+        force = Vector3.zero;
         speedT = CalSpeed(acceleration);
         positionT = CalPosition(speedT);
         transform.position = positionT;
 	}
-
-    // 处理玩家的输入
-    private void ProcessInput()
-    {
-        if(Input.GetMouseButtonDown(0))
-        {
-            force = new Vector3(1000, 1000, 0);
-        }
-    }
     // 计算小球的合力 ---> 重力，特定方向的推力
     // param force 特定方向的推力
     private Vector3 CalTotalForce(Vector3 force)
@@ -69,8 +53,8 @@ public class Ball : MonoBehaviour {
     // 计算小球的速度
     private Vector3 CalSpeed(Vector3 acceleration)
     {
-        float speedXt = acceleration.x * deltaTime + speed.x;
-        float speedYt = acceleration.y * deltaTime + speed.y;
+        float speedXt = acceleration.x * Time.deltaTime + speed.x;
+        float speedYt = acceleration.y * Time.deltaTime + speed.y;
         speed.x = speedXt;
         speed.y = speedYt;
         return new Vector3(speedXt, speedYt, 0);
@@ -78,13 +62,14 @@ public class Ball : MonoBehaviour {
     // 计算小球的位置
     private Vector3 CalPosition(Vector3 speed)
     {
-        float positionXt = speed.x * deltaTime + position.x;
-        float positionYt = speed.y * deltaTime + position.y;
+        float positionXt = speed.x * Time.deltaTime + position.x;
+        float positionYt = speed.y * Time.deltaTime + position.y;
         moveVector = Vector3.Normalize(new Vector3(positionXt, positionYt, 0) - new Vector3(position.x, position.y, 0));
         position.x = positionXt;
         position.y = positionYt;
         return new Vector3(positionXt, positionYt, 0);
     }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (isDestory)
