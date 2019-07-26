@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,18 +21,17 @@ public class RopeNodeCollision : MonoBehaviour {
     {
         if (type == NodeType.Leaf && collision.transform.tag == "ball")
         {
-            print("碰撞到了");
             // 碰撞点
             ContactPoint2D contact = collision.contacts[0];
             Quaternion rot = Quaternion.FromToRotation(Vector3.up, contact.normal);
             Vector3 hitPoint = contact.point;
             // 碰撞点指向圆心的向量
             Vector3 normal = Vector3.Normalize(transform.position - hitPoint);
-            gameObject.GetComponent<Rigidbody2D>().AddForce(normal * 5000);
+            transform.parent.GetComponent<Rope>().AddForce(normal * 1000);
         }
         else if(type==NodeType.Mid && collision.transform.tag == "ball")
         {
-
+            transform.parent.GetComponent<Rope>().BreakTheRope(Int32.Parse(transform.name));
         }
     }
 }

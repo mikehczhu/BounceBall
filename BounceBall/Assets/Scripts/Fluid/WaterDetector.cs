@@ -16,10 +16,11 @@ public class WaterDetector : MonoBehaviour {
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.GetComponent<Rigidbody2D>() != null)
+        // 弹力球碰撞到水面
+        if(collision.GetComponent<Ball>()!=null)
         {
-            print("碰撞到了");
-            transform.parent.GetComponent<Fluid>().Splash(transform.position.x, collision.GetComponent<Rigidbody2D>().velocity.y * collision.GetComponent<Rigidbody2D>().mass / 40.0f);
+            Destroy(collision.gameObject, 0.1f);
+            transform.parent.GetComponent<Fluid>().Wave(transform.position.x, collision.GetComponent<Ball>().speed.y * collision.GetComponent<Ball>().quality / 500.0f);
         }
     }
 }

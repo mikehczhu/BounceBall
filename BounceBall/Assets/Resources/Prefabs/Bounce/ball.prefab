@@ -98,7 +98,7 @@ MonoBehaviour:
   totalForce: {x: 0, y: 0, z: 0}
   quality: 0
   moveVector: {x: 0, y: 0, z: 0}
-  bounce: 0
+  bounce: 1
 --- !u!212 &212222662089805102
 SpriteRenderer:
   m_ObjectHideFlags: 1

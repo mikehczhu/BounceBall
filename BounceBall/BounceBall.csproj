@@ -236,13 +236,16 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Bounce\Ball.cs" />
     <Compile Include="Assets\Scripts\CameraFollow.cs" />
-    <Compile Include="Assets\Scripts\Fluid\Clickspawn.cs" />
+    <Compile Include="Assets\Scripts\Enemy.cs" />
+    <Compile Include="Assets\Scripts\EventSystem.cs" />
     <Compile Include="Assets\Scripts\Fluid\Fluid.cs" />
     <Compile Include="Assets\Scripts\Fluid\WaterDetector.cs" />
     <Compile Include="Assets\Scripts\MyPhysics.cs" />
     <Compile Include="Assets\Scripts\Player.cs" />
     <Compile Include="Assets\Scripts\Rope\Rope.cs" />
     <Compile Include="Assets\Scripts\Rope\RopeNodeCollision.cs" />
+    <Compile Include="Assets\Scripts\UI\UIMainController.cs" />
+    <Compile Include="Assets\Scripts\UI\UIMainView.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />

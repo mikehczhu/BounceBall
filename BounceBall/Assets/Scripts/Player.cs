@@ -13,6 +13,7 @@ public class Player : MonoBehaviour
     public Vector3 force;           // 人物受到的推力
     public Vector3 totalForce;      // 人物受到的合力
     public float quality;           // 人物的质量,kg
+    public Vector3 moveVector;      // 人物移动的方向
     public float moveSpeed;
     private GameObject bullet;      // 子弹
 
@@ -30,15 +31,17 @@ public class Player : MonoBehaviour
     void Update()
     {
         ProcessInput();
-        totalForce = CalTotalForce(force);
+        totalForce = MyPhysics.Instance.CalTotalForce(force, quality);
         force = Vector3.zero;
-        acceleration = CalAcceleration(totalForce);
-        speedT = CalSpeed(acceleration);
-        positionT = CalPosition(speedT);
+        acceleration = MyPhysics.Instance.CalAcceleration(totalForce, quality);
+        speedT = MyPhysics.Instance.CalSpeed(acceleration,ref speed);
+        positionT = MyPhysics.Instance.CalPosition(speedT, ref position,ref moveVector); 
         transform.position = positionT;
     }
 
-    // 处理玩家的输入
+    /// <summary>
+    /// 处理玩家的输入
+    /// </summary>
     private void ProcessInput()
     {
         float x = Input.GetAxis("Horizontal");
@@ -64,50 +67,24 @@ public class Player : MonoBehaviour
         }
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            GameObject go = Instantiate(bullet, transform.Find("shootPos").position, transform.rotation);
-            Destroy(go.gameObject, 3f);
+            if (UIMainController.Instance.GetBulletCnt() > 0)
+            {
+                GameObject go = Instantiate(bullet, transform.Find("shootPos").position, transform.rotation);
+                Destroy(go.gameObject, 2f);
+            }
+            EventSystem.Instance.Publish((int)GameEvent.use_a_bullet);
         }
     }
 
-
-
-    // 计算人物的合力 ---> 重力，特定方向的推力
-    // param force 特定方向的推力
-    private Vector3 CalTotalForce(Vector3 force)
-    {
-        Vector3 totalForce = force + new Vector3(0, quality * MyPhysics.Instance.G, 0);
-        return totalForce;
-    }
-    // 计算人物的加速度
-    private Vector3 CalAcceleration(Vector3 force)
-    {
-        return force / quality;
-    }
-    // 计算人物的速度
-    private Vector3 CalSpeed(Vector3 acceleration)
-    {
-        float speedXt = acceleration.x * Time.deltaTime + speed.x;
-        float speedYt = acceleration.y * Time.deltaTime + speed.y;
-        speed.x = speedXt;
-        speed.y = speedYt;
-        return new Vector3(speedXt, speedYt, 0);
-    }
-    // 计算人物的位置
-    private Vector3 CalPosition(Vector3 speed)
-    {
-        float positionXt = speed.x * Time.deltaTime + position.x;
-        float positionYt = speed.y * Time.deltaTime + position.y;
-        position.x = positionXt;
-        position.y = positionYt;
-        return new Vector3(positionXt, positionYt, 0);
-    }
-
-
-
+    /// <summary>
+    /// 碰撞检测
+    /// </summary>
+    /// <param name="collision"> 碰撞体 </param>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.transform.tag == "ball")
             return;
-        Time.timeScale = 0;
+        Destroy(gameObject, 0.1f);
+        EventSystem.Instance.Publish((int)GameEvent.player_die);
     }
 }

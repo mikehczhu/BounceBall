@@ -23,7 +23,7 @@ public class Ball : MonoBehaviour {
         speed = transform.right * 100;
         quality = 10.0f;
         force = Vector3.zero;
-        bounce = 1.0f;
+        //bounce = 1.0f;
         isDestory = false;
     }
 	
@@ -31,45 +31,18 @@ public class Ball : MonoBehaviour {
 	void Update () {
         if (isDestory)
             return;
-        totalForce = CalTotalForce(force);
-        acceleration = CalAcceleration(totalForce);
+        totalForce = MyPhysics.Instance.CalTotalForce(force, quality);
+        acceleration = MyPhysics.Instance.CalAcceleration(totalForce, quality);
         force = Vector3.zero;
-        speedT = CalSpeed(acceleration);
-        positionT = CalPosition(speedT);
+        speedT = MyPhysics.Instance.CalSpeed(acceleration, ref speed);
+        positionT = MyPhysics.Instance.CalPosition(speedT, ref position, ref moveVector);
         transform.position = positionT;
 	}
-    // 计算小球的合力 ---> 重力，特定方向的推力
-    // param force 特定方向的推力
-    private Vector3 CalTotalForce(Vector3 force)
-    {
-        Vector3 totalForce = force + new Vector3(0, quality * MyPhysics.Instance.G, 0);
-        return totalForce;
-    }
-    // 计算小球的加速度
-    private Vector3 CalAcceleration(Vector3 force)
-    {
-        return force / quality;
-    }
-    // 计算小球的速度
-    private Vector3 CalSpeed(Vector3 acceleration)
-    {
-        float speedXt = acceleration.x * Time.deltaTime + speed.x;
-        float speedYt = acceleration.y * Time.deltaTime + speed.y;
-        speed.x = speedXt;
-        speed.y = speedYt;
-        return new Vector3(speedXt, speedYt, 0);
-    }
-    // 计算小球的位置
-    private Vector3 CalPosition(Vector3 speed)
-    {
-        float positionXt = speed.x * Time.deltaTime + position.x;
-        float positionYt = speed.y * Time.deltaTime + position.y;
-        moveVector = Vector3.Normalize(new Vector3(positionXt, positionYt, 0) - new Vector3(position.x, position.y, 0));
-        position.x = positionXt;
-        position.y = positionYt;
-        return new Vector3(positionXt, positionYt, 0);
-    }
 
+    /// <summary>
+    /// 碰撞检测
+    /// </summary>
+    /// <param name="collision"> 碰撞体 </param>
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (isDestory)
