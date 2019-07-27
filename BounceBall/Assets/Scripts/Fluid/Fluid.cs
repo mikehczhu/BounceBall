@@ -1,441 +1,182 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 
 public class Fluid : MonoBehaviour
 {
-    private float[] xpositions;
-    private float[] ypositions;
-    private float[] velocities;
-    private float[] accelerations;
+    private List<FluidNode> m_Fluid = new List<FluidNode>();
 
-    private GameObject[] meshobjects;
-    private Mesh[] meshes;
-    private GameObject[] colliders;
+    private const float m_Spring = 0.02f;
+    private const float m_Damping = 0.04f;
+    private const float m_Spread = 0.05f;
 
-    private const float springconstant = 0.03f;
-    private const float damping = 0.04f;
-    private const float spread = 0.05f;
-    private const float z = -1f;
+    private float m_BaseHeight;
 
-    private float baseheight;
-    private float left;
-    private float bottom;
+    private Vector3 m_TopLeftPos;
+    private Vector3 m_BottomDownPos;
 
-    public GameObject watermesh;
+    public GameObject m_FluidMesh;
 
-    private float mass;
+    [HideInInspector]
+    public float m_Mass;
 
 
     void Start()
     {
-        SpawnWater(-48.3f, 46.3f+48.5f, -40, -50);
+        m_TopLeftPos = transform.parent.Find("TopLeftPos").position;
+        m_BottomDownPos = transform.parent.Find("BottomDownPos").position;
+        CreateFluid();
     }
 
     public void Wave(float xpos, float velocity)
-    {
-        //If the position is within the bounds of the water:
-        if (xpos >= xpositions[0] && xpos <= xpositions[xpositions.Length - 1])
+    {;
+        if (xpos >= m_Fluid[0].m_LeftTopPos.x && xpos <= m_Fluid[m_Fluid.Count - 1].m_BottomDownPos.x)
         {
-            //Offset the x position to be the distance from the left side
-            xpos -= xpositions[0];
+            xpos -= m_Fluid[0].m_LeftTopPos.x;
 
-            //Find which spring we're touching
-            int index = Mathf.RoundToInt((xpositions.Length - 1) * (xpos / (xpositions[xpositions.Length - 1] - xpositions[0])));
+            int index = Mathf.RoundToInt(m_Fluid.Count * (xpos / (m_Fluid[m_Fluid.Count - 1].m_LeftTopPos.x - m_Fluid[0].m_LeftTopPos.x)));
 
-            //Add the velocity of the falling object to the spring
-            velocities[index] += velocity;
-
-            //Set the lifetime of the particle system.
-            float lifetime = 0.93f + Mathf.Abs(velocity) * 0.07f;
-
-
-            //Set the correct position of the particle system.
-            Vector3 position = new Vector3(xpositions[index], ypositions[index] - 0.35f, 5);
-
-            //This line aims the splash towards the middle. Only use for small bodies of water:
-            Quaternion rotation = Quaternion.LookRotation(new Vector3(xpositions[Mathf.FloorToInt(xpositions.Length / 2)], baseheight + 8, 5) - position);
+            FluidNode node = m_Fluid[index];
+            node.m_Velocity += velocity;
+            m_Fluid[index] = node;
         }
     }
 
-    public void SpawnWater(float Left, float Width, float Top, float Bottom)
+    public void CreateFluid()
     {
-        //Calculating the number of edges and nodes we have
-        int edgecount = Mathf.RoundToInt(Width)/2;
-        int nodecount = edgecount + 1;
+        float Left = m_TopLeftPos.x;
+        float Width = m_BottomDownPos.x - m_TopLeftPos.x;
+        float Top = m_TopLeftPos.y;
+        float Bottom = m_BottomDownPos.y;
+        int nodeCount = Mathf.RoundToInt(Width) / 2;
+        m_Mass = 1;
+        m_BaseHeight = Top;
 
-        //Declare our physics arrays
-        xpositions = new float[nodecount];
-        ypositions = new float[nodecount];
-        velocities = new float[nodecount];
-        accelerations = new float[nodecount];
-
-        //Declare our mesh arrays
-        meshobjects = new GameObject[edgecount];
-        meshes = new Mesh[edgecount];
-        colliders = new GameObject[edgecount];
-
-        //Set our variables
-        baseheight = Top;
-        bottom = Bottom;
-        left = Left;
-
-        //For each node, set the line renderer and our physics arrays
-        for (int i = 0; i < nodecount; i++)
+        for (int i = 0; i < nodeCount; i++)
         {
-            ypositions[i] = Top;
-            xpositions[i] = Left + Width * i / edgecount;
-            accelerations[i] = 0;
-            velocities[i] = 0;
-        }
+            FluidNode node = new FluidNode();
+            node.m_LeftTopPos = new Vector2(Left + Width * i / nodeCount, Top);
+            node.m_BottomDownPos = new Vector2(Left + Width * (i + 1) / nodeCount, Bottom);
+            node.m_Acceleration = 0;
+            node.m_Velocity = 0;
 
-        //Setting the meshes now:
-        for (int i = 0; i < edgecount; i++)
-        {
-            //Make the mesh
-            meshes[i] = new Mesh();
+            node.m_Mesh = new Mesh();
 
-            //Create the corners of the mesh
             Vector3[] Vertices = new Vector3[4];
-            Vertices[0] = new Vector3(xpositions[i], ypositions[i], z);
-            Vertices[1] = new Vector3(xpositions[i + 1], ypositions[i + 1], z);
-            Vertices[2] = new Vector3(xpositions[i], bottom, z);
-            Vertices[3] = new Vector3(xpositions[i + 1], bottom, z);
+            Vertices[0] = new Vector3(node.m_LeftTopPos.x, node.m_LeftTopPos.y, 0);
+            Vertices[1] = new Vector3(node.m_BottomDownPos.x, node.m_LeftTopPos.y, 0);
+            Vertices[2] = new Vector3(node.m_LeftTopPos.x, node.m_BottomDownPos.y, 0);
+            Vertices[3] = new Vector3(node.m_BottomDownPos.x, node.m_BottomDownPos.y, 0);
 
-            //Set the UVs of the texture
             Vector2[] UVs = new Vector2[4];
             UVs[0] = new Vector2(0, 1);
             UVs[1] = new Vector2(1, 1);
             UVs[2] = new Vector2(0, 0);
             UVs[3] = new Vector2(1, 0);
 
-            //Set where the triangles should be.
             int[] tris = new int[6] { 0, 1, 3, 3, 2, 0 };
 
-            //Add all this data to the mesh.
-            meshes[i].vertices = Vertices;
-            meshes[i].uv = UVs;
-            meshes[i].triangles = tris;
+            node.m_Mesh.vertices = Vertices;
+            node.m_Mesh.uv = UVs;
+            node.m_Mesh.triangles = tris;
 
-            //Create a holder for the mesh, set it to be the manager's child
-            meshobjects[i] = Instantiate(watermesh, Vector3.zero, Quaternion.identity) as GameObject;
-            meshobjects[i].GetComponent<MeshFilter>().mesh = meshes[i];
-            meshobjects[i].transform.parent = transform;
+            node.m_MeshObject = Instantiate(m_FluidMesh, Vector3.zero, Quaternion.identity) as GameObject;
+            node.m_MeshObject.GetComponent<MeshFilter>().mesh = node.m_Mesh;
+            node.m_MeshObject.transform.parent = transform;
+            //node.m_MeshObject.transform.position = new Vector3((node.m_LeftTopPos.x + node.m_BottomDownPos.x) / 2,
+            //    (node.m_LeftTopPos.y + node.m_BottomDownPos.y) / 2, 0);
 
-            //Create our colliders, set them be our child
-            colliders[i] = new GameObject();
-            colliders[i].name = "Trigger";
-            colliders[i].AddComponent<BoxCollider2D>();
-            colliders[i].transform.parent = transform;
+            node.m_MeshObject.AddComponent<BoxCollider2D>();
+            node.m_MeshObject.GetComponent<BoxCollider2D>().isTrigger = true;
+            node.m_MeshObject.AddComponent<FluidCollision>();
 
-            //Set the position and scale to the correct dimensions
-            colliders[i].transform.position = new Vector3(Left + Width * (i + 0.5f) / edgecount, Top - 0.5f, 0);
-            colliders[i].transform.localScale = new Vector3(Width / edgecount, 1, 1);
-
-            //Add a WaterDetector and make sure they're triggers
-            colliders[i].GetComponent<BoxCollider2D>().isTrigger = true;
-            colliders[i].AddComponent<WaterDetector>();
-
+            m_Fluid.Add(node);
         }
-
-
-
-
     }
 
-    //Same as the code from in the meshes before, set the new mesh positions
     void UpdateMeshes()
     {
-        for (int i = 0; i < meshes.Length; i++)
+        for (int i = 0; i < m_Fluid.Count; i++)
         {
 
             Vector3[] Vertices = new Vector3[4];
-            Vertices[0] = new Vector3(xpositions[i], ypositions[i], z);
-            Vertices[1] = new Vector3(xpositions[i + 1], ypositions[i + 1], z);
-            Vertices[2] = new Vector3(xpositions[i], bottom, z);
-            Vertices[3] = new Vector3(xpositions[i + 1], bottom, z);
 
-            meshes[i].vertices = Vertices;
+            Vertices[0] = new Vector3(m_Fluid[i].m_LeftTopPos.x, m_Fluid[i].m_LeftTopPos.y, 0);
+            Vertices[1] = new Vector3(m_Fluid[i].m_BottomDownPos.x, m_Fluid[i].m_LeftTopPos.y, 0);
+            Vertices[2] = new Vector3(m_Fluid[i].m_LeftTopPos.x, m_Fluid[i].m_BottomDownPos.y, 0);
+            Vertices[3] = new Vector3(m_Fluid[i].m_BottomDownPos.x, m_Fluid[i].m_BottomDownPos.y, 0);
+
+            m_Fluid[i].m_Mesh.vertices = Vertices;
         }
     }
 
-    //Called regularly by Unity
     void FixedUpdate()
     {
-        //Here we use the Euler method to handle all the physics of our springs:
-        for (int i = 0; i < xpositions.Length; i++)
+        // 实现碰撞到的水面的阻尼运动
+        for (int i = 0; i < m_Fluid.Count; i++)
         {
-            float force = springconstant * (ypositions[i] - baseheight) + velocities[i] * damping;
-            accelerations[i] = -force;
-            ypositions[i] += velocities[i];
-            velocities[i] += accelerations[i];
+            float force = m_Spring * (m_Fluid[i].m_LeftTopPos.y - m_BaseHeight) + m_Fluid[i].m_Velocity * m_Damping;
+            FluidNode node = m_Fluid[i];
+            node.m_Acceleration = -force / m_Mass;
+            node.m_LeftTopPos = new Vector2(node.m_LeftTopPos.x, node.m_LeftTopPos.y + node.m_Velocity);
+            node.m_Velocity += node.m_Acceleration;
+            m_Fluid[i] = node;
         }
 
-        //Now we store the difference in heights:
-        float[] leftDeltas = new float[xpositions.Length];
-        float[] rightDeltas = new float[xpositions.Length];
-
-        //We make 8 small passes for fluidity:
-        for (int j = 0; j < 8; j++)
+        // 碰撞到的水面带动附近的水面一起运动
+        for (int j = 0; j < 5; j++)
         {
-            for (int i = 0; i < xpositions.Length; i++)
-            {
-                //We check the heights of the nearby nodes, adjust velocities accordingly, record the height differences
-                if (i > 0)
-                {
-                    leftDeltas[i] = spread * (ypositions[i] - ypositions[i - 1]);
-                    velocities[i - 1] += leftDeltas[i];
-                }
-                if (i < xpositions.Length - 1)
-                {
-                    rightDeltas[i] = spread * (ypositions[i] - ypositions[i + 1]);
-                    velocities[i + 1] += rightDeltas[i];
-                }
-            }
-
-            //Now we apply a difference in position
-            for (int i = 0; i < xpositions.Length; i++)
+            for (int i = 0; i < m_Fluid.Count; i++)
             {
                 if (i > 0)
-                    ypositions[i - 1] += leftDeltas[i];
-                if (i < xpositions.Length - 1)
-                    ypositions[i + 1] += rightDeltas[i];
+                {
+                    FluidNode node = m_Fluid[i];
+                    node.m_LeftHeightDiff = m_Spread * (m_Fluid[i].m_LeftTopPos.y - m_Fluid[i - 1].m_LeftTopPos.y);
+                    m_Fluid[i] = node;
+                    node = m_Fluid[i - 1];
+                    node.m_Velocity = node.m_Velocity + m_Fluid[i].m_LeftHeightDiff;
+                    m_Fluid[i - 1] = node;
+                }
+                if (i < m_Fluid.Count - 1)
+                {
+                    FluidNode node = m_Fluid[i];
+                    node.m_RightHeightDiff = m_Spread * (m_Fluid[i].m_LeftTopPos.y - m_Fluid[i + 1].m_LeftTopPos.y);
+                    m_Fluid[i] = node;
+                    node = m_Fluid[i + 1];
+                    node.m_Velocity = node.m_Velocity + m_Fluid[i].m_RightHeightDiff;
+                    m_Fluid[i + 1] = node;
+                }
             }
         }
-        //Finally we update the meshes to reflect this
+        for (int i = 0; i < m_Fluid.Count; i++)
+        {
+            if (i > 0)
+            {
+                FluidNode node = m_Fluid[i - 1];
+                node.m_LeftTopPos = new Vector2(node.m_LeftTopPos.x, node.m_LeftTopPos.y + m_Fluid[i].m_LeftHeightDiff);
+                m_Fluid[i - 1] = node;
+            }
+            if (i < m_Fluid.Count - 1)
+            {
+                FluidNode node = m_Fluid[i + 1];
+                node.m_LeftTopPos = new Vector2(node.m_LeftTopPos.x, node.m_LeftTopPos.y + m_Fluid[i].m_RightHeightDiff);
+                m_Fluid[i + 1] = node;
+            }
+        }
+
         UpdateMeshes();
+
+    }
+
+    struct FluidNode
+    {
+        public Vector2 m_LeftTopPos;
+        public Vector2 m_BottomDownPos;
+        public float m_Velocity;
+        public float m_Acceleration;
+        public float m_LeftHeightDiff;
+        public float m_RightHeightDiff;
+        public Mesh m_Mesh;
+        public GameObject m_MeshObject;
     }
 }
-
-
-
-
-/*
-using UnityEngine;
-using System.Collections;
-
-
-public class Fluid : MonoBehaviour
-{
-    private float[] xpositions;
-    private float[] ypositions;
-    private float[] velocities;
-    private float[] accelerations;
-    private LineRenderer Body;
-
-    private GameObject[] meshobjects;
-    private Mesh[] meshes;
-    private GameObject[] colliders;
-
-    private const float springconstant = 0.02f;
-    private const float damping = 0.04f;
-    private const float spread = 0.05f;
-    private const float z = -1f;
-
-    private float baseheight;
-    private float left;
-    private float bottom;
-
-    public Material mat;
-    public GameObject watermesh;
-
-    private float mass;
-
-
-    void Start()
-    {
-        SpawnWater(-48.3f, 46.3f+48.5f, -40, -50);
-    }
-
-    public void Splash(float xpos, float velocity)
-    {
-        //If the position is within the bounds of the water:
-        if (xpos >= xpositions[0] && xpos <= xpositions[xpositions.Length - 1])
-        {
-            //Offset the x position to be the distance from the left side
-            xpos -= xpositions[0];
-
-            //Find which spring we're touching
-            int index = Mathf.RoundToInt((xpositions.Length - 1) * (xpos / (xpositions[xpositions.Length - 1] - xpositions[0])));
-
-            //Add the velocity of the falling object to the spring
-            velocities[index] += velocity;
-
-            //Set the lifetime of the particle system.
-            float lifetime = 0.93f + Mathf.Abs(velocity) * 0.07f;
-
-
-            //Set the correct position of the particle system.
-            Vector3 position = new Vector3(xpositions[index], ypositions[index] - 0.35f, 5);
-
-            //This line aims the splash towards the middle. Only use for small bodies of water:
-            Quaternion rotation = Quaternion.LookRotation(new Vector3(xpositions[Mathf.FloorToInt(xpositions.Length / 2)], baseheight + 8, 5) - position);
-        }
-    }
-
-    public void SpawnWater(float Left, float Width, float Top, float Bottom)
-    {
-        //Calculating the number of edges and nodes we have
-        int edgecount = Mathf.RoundToInt(Width)/2;
-        int nodecount = edgecount + 1;
-
-        //Add our line renderer and set it up:
-        Body = gameObject.AddComponent<LineRenderer>();
-        Body.material = mat;
-        Body.material.renderQueue = 1000;
-        Body.SetVertexCount(nodecount);
-        Body.SetWidth(0.1f, 0.1f);
-
-        //Declare our physics arrays
-        xpositions = new float[nodecount];
-        ypositions = new float[nodecount];
-        velocities = new float[nodecount];
-        accelerations = new float[nodecount];
-
-        //Declare our mesh arrays
-        meshobjects = new GameObject[edgecount];
-        meshes = new Mesh[edgecount];
-        colliders = new GameObject[edgecount];
-
-        //Set our variables
-        baseheight = Top;
-        bottom = Bottom;
-        left = Left;
-
-        //For each node, set the line renderer and our physics arrays
-        for (int i = 0; i < nodecount; i++)
-        {
-            ypositions[i] = Top;
-            xpositions[i] = Left + Width * i / edgecount;
-            Body.SetPosition(i, new Vector3(xpositions[i], Top, z));
-            accelerations[i] = 0;
-            velocities[i] = 0;
-        }
-
-        //Setting the meshes now:
-        for (int i = 0; i < edgecount; i++)
-        {
-            //Make the mesh
-            meshes[i] = new Mesh();
-
-            //Create the corners of the mesh
-            Vector3[] Vertices = new Vector3[4];
-            Vertices[0] = new Vector3(xpositions[i], ypositions[i], z);
-            Vertices[1] = new Vector3(xpositions[i + 1], ypositions[i + 1], z);
-            Vertices[2] = new Vector3(xpositions[i], bottom, z);
-            Vertices[3] = new Vector3(xpositions[i + 1], bottom, z);
-
-            //Set the UVs of the texture
-            Vector2[] UVs = new Vector2[4];
-            UVs[0] = new Vector2(0, 1);
-            UVs[1] = new Vector2(1, 1);
-            UVs[2] = new Vector2(0, 0);
-            UVs[3] = new Vector2(1, 0);
-
-            //Set where the triangles should be.
-            int[] tris = new int[6] { 0, 1, 3, 3, 2, 0 };
-
-            //Add all this data to the mesh.
-            meshes[i].vertices = Vertices;
-            meshes[i].uv = UVs;
-            meshes[i].triangles = tris;
-
-            //Create a holder for the mesh, set it to be the manager's child
-            meshobjects[i] = Instantiate(watermesh, Vector3.zero, Quaternion.identity) as GameObject;
-            meshobjects[i].GetComponent<MeshFilter>().mesh = meshes[i];
-            meshobjects[i].transform.parent = transform;
-
-            //Create our colliders, set them be our child
-            colliders[i] = new GameObject();
-            colliders[i].name = "Trigger";
-            colliders[i].AddComponent<BoxCollider2D>();
-            colliders[i].transform.parent = transform;
-
-            //Set the position and scale to the correct dimensions
-            colliders[i].transform.position = new Vector3(Left + Width * (i + 0.5f) / edgecount, Top - 0.5f, 0);
-            colliders[i].transform.localScale = new Vector3(Width / edgecount, 1, 1);
-
-            //Add a WaterDetector and make sure they're triggers
-            colliders[i].GetComponent<BoxCollider2D>().isTrigger = true;
-            colliders[i].AddComponent<WaterDetector>();
-
-        }
-
-
-
-
-    }
-
-    //Same as the code from in the meshes before, set the new mesh positions
-    void UpdateMeshes()
-    {
-        for (int i = 0; i < meshes.Length; i++)
-        {
-
-            Vector3[] Vertices = new Vector3[4];
-            Vertices[0] = new Vector3(xpositions[i], ypositions[i], z);
-            Vertices[1] = new Vector3(xpositions[i + 1], ypositions[i + 1], z);
-            Vertices[2] = new Vector3(xpositions[i], bottom, z);
-            Vertices[3] = new Vector3(xpositions[i + 1], bottom, z);
-
-            meshes[i].vertices = Vertices;
-        }
-    }
-
-    //Called regularly by Unity
-    void FixedUpdate()
-    {
-        //Here we use the Euler method to handle all the physics of our springs:
-        for (int i = 0; i < xpositions.Length; i++)
-        {
-            float force = springconstant * (ypositions[i] - baseheight) + velocities[i] * damping;
-            accelerations[i] = -force;
-            ypositions[i] += velocities[i];
-            velocities[i] += accelerations[i];
-            Body.SetPosition(i, new Vector3(xpositions[i], ypositions[i], z));
-        }
-
-        //Now we store the difference in heights:
-        float[] leftDeltas = new float[xpositions.Length];
-        float[] rightDeltas = new float[xpositions.Length];
-
-        //We make 8 small passes for fluidity:
-        for (int j = 0; j < 8; j++)
-        {
-            for (int i = 0; i < xpositions.Length; i++)
-            {
-                //We check the heights of the nearby nodes, adjust velocities accordingly, record the height differences
-                if (i > 0)
-                {
-                    leftDeltas[i] = spread * (ypositions[i] - ypositions[i - 1]);
-                    velocities[i - 1] += leftDeltas[i];
-                }
-                if (i < xpositions.Length - 1)
-                {
-                    rightDeltas[i] = spread * (ypositions[i] - ypositions[i + 1]);
-                    velocities[i + 1] += rightDeltas[i];
-                }
-            }
-
-            //Now we apply a difference in position
-            for (int i = 0; i < xpositions.Length; i++)
-            {
-                if (i > 0)
-                    ypositions[i - 1] += leftDeltas[i];
-                if (i < xpositions.Length - 1)
-                    ypositions[i + 1] += rightDeltas[i];
-            }
-        }
-        //Finally we update the meshes to reflect this
-        UpdateMeshes();
-    }
-
-    void OnTriggerStay2D(Collider2D Hit)
-    {
-        //Bonus exercise. Fill in your code here for making things float in your water.
-        //You might want to even include a buoyancy constant unique to each object!
-    }
-
-}
-
-*/
