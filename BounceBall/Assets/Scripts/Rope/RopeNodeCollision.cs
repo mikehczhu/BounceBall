@@ -29,7 +29,7 @@ public class RopeNodeCollision : MonoBehaviour {
             Vector3 normal = Vector3.Normalize(transform.position - hitPoint);
             transform.parent.GetComponent<Rope>().AddForce(normal * 1000);
         }
-        else if(type==NodeType.Mid && collision.transform.tag == "ball")
+        else if (type == NodeType.Mid && collision.transform.tag == "ball")
         {
             transform.parent.GetComponent<Rope>().BreakTheRope(Int32.Parse(transform.name));
         }

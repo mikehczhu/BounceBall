@@ -69,7 +69,7 @@ public class UIMainController : MonoBehaviour {
     }
     public void GameOver()
     {
-        GameObject.Find("Rope").GetComponent<Rope>().enabled = false;
+        GameObject.Find("Rope").GetComponent<RopeLRA>().enabled = false;
         Time.timeScale = 0;
     }
 }

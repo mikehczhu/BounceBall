@@ -61,7 +61,7 @@ public class MyPhysics : MonoBehaviour {
     /// <returns></returns>
     public Vector3 CalPosition(Vector3 speed,ref Vector3 position,ref Vector3 moveVector)
     {
-        float positionXt = speed.x * Time.deltaTime + position.x;
+        float positionXt = speed.x *Time.deltaTime + position.x;
         float positionYt = speed.y * Time.deltaTime + position.y;
         moveVector = Vector3.Normalize(new Vector3(positionXt, positionYt, 0) - new Vector3(position.x, position.y, 0));
         position.x = positionXt;
